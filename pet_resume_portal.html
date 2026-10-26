@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>萌宠个人履历 & 职场名片 | Pet CV Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cream: {
+                            50: '#fffdfa',
+                            100: '#fdf6ed',
+                            200: '#f7e8d3',
+                            300: '#f0d3b1',
+                            400: '#e5b687',
+                        },
+                        paw: {
+                            pink: '#ffbfa3',
+                            rose: '#ff9ebb',
+                            yellow: '#ffe394',
+                            mint: '#b5ead7',
+                            brown: '#7d5a44'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Comic Sans MS', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Fredoka', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: #fdf6ed;
+            color: #5c4333;
+        }
+
+        /* 萌系柔和阴影与圆角 */
+        .pet-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #f7e8d3;
+            box-shadow: 0 10px 25px -5px rgba(229, 182, 135, 0.25);
+            border-radius: 1.5rem;
+        }
+
+        .dark .pet-card {
+            background: rgba(38, 28, 23, 0.9);
+            border: 2px solid #4a372c;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+            color: #ebdacf;
+        }
+
+        /* 浮动动画 */
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: bounce-slow 3s ease-in-out infinite;
+        }
+
+        /* 零食掉落动画 */
+        @keyframes treat-fall {
+            0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(200px) rotate(360deg); opacity: 0; }
+        }
+        .falling-treat {
+            position: fixed;
+            z-index: 999;
+            pointer-events: none;
+            animation: treat-fall 1.2s ease-out forwards;
+        }
+
+        /* 声音波纹提示 */
+        @keyframes sound-wave {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+        .sound-ripple {
+            animation: sound-wave 0.8s ease-out forwards;
+        }
+
+        /* 打印样式优化 */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .pet-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen transition-colors duration-300 relative overflow-x-hidden selection:bg-paw-pink selection:text-white">
+
+    <!-- 顶栏导航 -->
+    <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-cream-200 dark:border-slate-800 no-print">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-400 to-amber-300 flex items-center justify-center text-white font-bold text-xl shadow-md">
+                    <i class="fa-solid fa-paw animate-bounce"></i>
+                </span>
+                <span class="font-bold text-lg text-amber-900 dark:text-amber-200 tracking-tight" id="navPetTitle">
+                    猫咪咪 • 职场求职名片
+                </span>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- 预设模板一键切换 (猫咪 / 狗狗) -->
+                <button onclick="switchPetPreset('cat')" title="一键切换为猫咪模版" class="px-2.5 py-1.5 rounded-xl bg-amber-100 dark:bg-slate-800 text-amber-900 dark:text-amber-200 text-xs font-bold hover:bg-amber-200 transition">
+                    🐱 猫咪版
+                </button>
+                <button onclick="switchPetPreset('dog')" title="一键切换为狗狗模版" class="px-2.5 py-1.5 rounded-xl bg-orange-100 dark:bg-slate-800 text-orange-900 dark:text-orange-200 text-xs font-bold hover:bg-orange-200 transition">
+                    🐶 狗狗版
+                </button>
+
+                <!-- 编辑宠物资料 -->
+                <button onclick="toggleEditModal()" title="自定义修改信息" class="p-2 rounded-xl bg-paw-pink/20 hover:bg-paw-pink/30 text-rose-700 dark:text-rose-300 text-xs font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span class="hidden sm:inline">编辑资料</span>
+                </button>
+
+                <!-- 导出 PDF -->
+                <button onclick="window.print()" title="打印/导出履历" class="p-2 rounded-xl bg-amber-200/50 hover:bg-amber-200 text-amber-800 dark:text-amber-200 text-xs font-bold transition">
+                    <i class="fa-solid fa-print"></i>
+                </button>
+
+                <!-- 暗黑/明亮模式切换 -->
+                <button onclick="toggleTheme()" class="p-2 rounded-xl text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-slate-800 transition">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+
+        <!-- HERO 档案卡片 -->
+        <section id="hero" class="pet-card p-6 sm:p-8 relative overflow-hidden">
+            <!-- 气泡装饰背景 -->
+            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-paw-pink/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -left-10 -top-10 w-48 h-48 bg-paw-yellow/30 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10">
+                <!-- 头像区域 -->
+                <div class="relative group shrink-0">
+                    <div class="w-36 h-36 sm:w-44 sm:h-44 rounded-3xl overflow-hidden ring-4 ring-orange-200 dark:ring-amber-900 shadow-xl bg-amber-100 flex items-center justify-center">
+                        <img id="petAvatar" src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=400&q=80" alt="宠物头像" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                    </div>
+                    <!-- 浮动爪印标记 -->
+                    <span class="absolute -bottom-2 -right-2 bg-rose-500 text-white p-2 rounded-2xl shadow-lg animate-float text-sm">
+                        <i class="fa-solid fa-shield-cat" id="badgeIcon"></i>
+                    </span>
+                </div>
+
+                <!-- 基本信息 -->
+                <div class="flex-1 text-center md:text-left space-y-3">
+                    <div class="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                        <span id="petStatusBadge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                            <span id="petStatusText">随时可提供摸摸 & 咕噜</span>
+                        </span>
+                        <span id="petMbtiBadge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200">
+                            MBTI: ENFP (陪伴型毛孩子)
+                        </span>
+                    </div>
+
+                    <div>
+                        <h1 class="text-3xl sm:text-4xl font-extrabold text-amber-900 dark:text-amber-100 tracking-tight flex items-center justify-center md:justify-start gap-3">
+                            <span id="petName">咪咪 (Mimi)</span>
+                            <span id="petGenderIcon" class="text-rose-400 text-2xl"><i class="fa-solid fa-mars"></i></span>
+                        </h1>
+                        <p id="petTitle" class="text-lg font-bold text-amber-700 dark:text-amber-400 mt-1">
+                            首席陪伴官 (Chief Emotional Officer) & 踩奶专家
+                        </p>
+                    </div>
+
+                    <!-- 属性指标 -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs py-2">
+                        <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800/80 border border-amber-100 dark:border-slate-700">
+                            <div class="text-amber-600 dark:text-amber-400 font-semibold">品种</div>
+                            <div class="font-bold text-slate-800 dark:text-slate-200 mt-0.5" id="petBreed">英国短毛猫 (英短蓝猫)</div>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800/80 border border-amber-100 dark:border-slate-700">
+                            <div class="text-amber-600 dark:text-amber-400 font-semibold">年龄 / 折算人类</div>
+                            <div class="font-bold text-slate-800 dark:text-slate-200 mt-0.5" id="petAge">3岁 (人类 28 岁)</div>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800/80 border border-amber-100 dark:border-slate-700">
+                            <div class="text-amber-600 dark:text-amber-400 font-semibold">居住领地</div>
+                            <div class="font-bold text-slate-800 dark:text-slate-200 mt-0.5" id="petLocation">上海 • 暖阳阳阳台</div>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800/80 border border-amber-100 dark:border-slate-700">
+                            <div class="text-amber-600 dark:text-amber-400 font-semibold">绝育 & 疫苗状态</div>
+                            <div class="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5" id="petHealth">已绝育 / 疫苗齐全</div>
+                        </div>
+                    </div>
+
+                    <!-- 动态状态指示灯 (心情、精力、饱腹) -->
+                    <div class="space-y-2 pt-1">
+                        <div class="flex items-center gap-3 text-xs font-bold">
+                            <span class="w-16 shrink-0 text-amber-800 dark:text-amber-300">⚡ 精力值</span>
+                            <div class="flex-1 bg-amber-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden p-0.5">
+                                <div id="energyBar" class="bg-gradient-to-r from-amber-400 to-orange-500 h-full rounded-full transition-all duration-500" style="width: 85%;"></div>
+                            </div>
+                            <span id="energyNum" class="w-8 text-right">85%</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs font-bold">
+                            <span class="w-16 shrink-0 text-amber-800 dark:text-amber-300">💖 心情指数</span>
+                            <div class="flex-1 bg-rose-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden p-0.5">
+                                <div id="moodBar" class="bg-gradient-to-r from-rose-400 to-pink-500 h-full rounded-full transition-all duration-500" style="width: 95%;"></div>
+                            </div>
+                            <span id="moodNum" class="w-8 text-right">95%</span>
+                        </div>
+                    </div>
+
+                    <!-- 互动按钮区 -->
+                    <div class="flex flex-wrap gap-3 pt-3 justify-center md:justify-start no-print">
+                        <button onclick="feedPet()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 active:scale-95 transition flex items-center gap-2">
+                            <i class="fa-solid fa-cookie-bite"></i> 投喂零食 (+心情)
+                        </button>
+                        <button onclick="makeSound()" class="px-4 py-2 rounded-xl bg-paw-pink text-rose-900 font-bold text-xs shadow-md shadow-rose-300/30 hover:bg-rose-300 active:scale-95 transition flex items-center gap-2 relative">
+                            <i class="fa-solid fa-volume-high"></i> 发出叫声 (<span id="soundActionText">喵呜~</span>)
+                            <span id="soundRipple" class="absolute inset-0 rounded-xl bg-rose-400/30 hidden sound-ripple"></span>
+                        </button>
+                        <button onclick="openAdoptModal()" class="px-4 py-2 rounded-xl bg-amber-100 dark:bg-slate-800 text-amber-900 dark:text-amber-200 font-bold text-xs hover:bg-amber-200 transition flex items-center gap-2">
+                            <i class="fa-solid fa-heart text-rose-500"></i> 应聘铲屎官 / 云吸
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 核心技能矩阵 Stats & Skills -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- 技能点数 -->
+            <div class="pet-card p-6 md:col-span-2 space-y-4">
+                <div class="flex items-center gap-2 border-b border-cream-200 dark:border-slate-800 pb-3">
+                    <span class="p-2 rounded-xl bg-orange-100 text-orange-600 dark:bg-slate-800 dark:text-orange-400">
+                        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                    </span>
+                    <h2 class="text-xl font-bold text-amber-900 dark:text-amber-100">核心天赋技能矩阵</h2>
+                </div>
+
+                <div class="space-y-3.5 text-xs font-bold" id="skillsList">
+                    <!-- 技能 1 -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-hand-holding-heart text-rose-400"></i> 治愈系咕噜 & 陪伴 (Emotional Support)</span>
+                            <span class="text-rose-500">100% (大师级)</span>
+                        </div>
+                        <div class="bg-amber-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div class="bg-rose-400 h-2.5 rounded-full" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <!-- 技能 2 -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-mattress-pillow text-amber-500"></i> 毯子/肉垫踩奶 (Baking Biscuits)</span>
+                            <span class="text-amber-600">98% (专家级)</span>
+                        </div>
+                        <div class="bg-amber-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div class="bg-amber-400 h-2.5 rounded-full" style="width: 98%"></div>
+                        </div>
+                    </div>
+                    <!-- 技能 3 -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-bug text-emerald-500"></i> 蚊虫打捕与侦察 (Pest Control)</span>
+                            <span class="text-emerald-600">85% (高级)</span>
+                        </div>
+                        <div class="bg-amber-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div class="bg-emerald-400 h-2.5 rounded-full" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <!-- 技能 4 -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-utensils text-orange-500"></i> 卖萌讨要罐头 (Begging Skills)</span>
+                            <span class="text-orange-600">95% (精通)</span>
+                        </div>
+                        <div class="bg-amber-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div class="bg-orange-400 h-2.5 rounded-full" style="width: 95%"></div>
+                        </div>
+                    </div>
+                    <!-- 技能 5 -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-restroom text-indigo-500"></i> 定点文明使用猫砂/狗厕所</span>
+                            <span class="text-indigo-600">100% (模范)</span>
+                        </div>
+                        <div class="bg-amber-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div class="bg-indigo-400 h-2.5 rounded-full" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 体质指标与健康卡片 -->
+            <div class="pet-card p-6 space-y-4">
+                <div class="flex items-center gap-2 border-b border-cream-200 dark:border-slate-800 pb-3">
+                    <span class="p-2 rounded-xl bg-rose-100 text-rose-600 dark:bg-slate-800 dark:text-rose-400">
+                        <i class="fa-solid fa-notes-medical text-lg"></i>
+                    </span>
+                    <h2 class="text-xl font-bold text-amber-900 dark:text-amber-100">健康体质档案</h2>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <div class="flex justify-between items-center p-2 rounded-xl bg-cream-100 dark:bg-slate-800">
+                        <span class="text-slate-500 dark:text-slate-400 font-bold">标准体重</span>
+                        <span class="font-extrabold text-amber-900 dark:text-amber-200" id="petWeight">4.8 kg (微胖可爱)</span>
+                    </div>
+                    <div class="flex justify-between items-center p-2 rounded-xl bg-cream-100 dark:bg-slate-800">
+                        <span class="text-slate-500 dark:text-slate-400 font-bold">体长 (含尾)</span>
+                        <span class="font-extrabold text-amber-900 dark:text-amber-200" id="petLength">55 cm</span>
+                    </div>
+                    <div class="flex justify-between items-center p-2 rounded-xl bg-cream-100 dark:bg-slate-800">
+                        <span class="text-slate-500 dark:text-slate-400 font-bold">毛色发质</span>
+                        <span class="font-extrabold text-amber-900 dark:text-amber-200" id="petFur">极度顺滑 / 柔顺灰蓝</span>
+                    </div>
+                    <div class="flex justify-between items-center p-2 rounded-xl bg-cream-100 dark:bg-slate-800">
+                        <span class="text-slate-500 dark:text-slate-400 font-bold">驱虫记录</span>
+                        <span class="font-extrabold text-emerald-600 dark:text-emerald-400">每月定期完成</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 工作履历与拆家/捣蛋项目 -->
+        <section class="pet-card p-6 sm:p-8 space-y-6">
+            <div class="flex items-center gap-2 border-b border-cream-200 dark:border-slate-800 pb-4">
+                <span class="p-2.5 rounded-xl bg-amber-100 text-amber-700 dark:bg-slate-800 dark:text-amber-300">
+                    <i class="fa-solid fa-briefcase text-xl"></i>
+                </span>
+                <div>
+                    <h2 class="text-2xl font-bold text-amber-900 dark:text-amber-100">“职场履历”与大闹天空重大项目</h2>
+                    <p class="text-xs text-amber-700/70 dark:text-slate-400">多年家庭守卫与情绪陪护实战总结</p>
+                </div>
+            </div>
+
+            <div class="space-y-6 text-sm">
+                <!-- 履历 1 -->
+                <div class="relative pl-6 border-l-2 border-amber-300 dark:border-amber-900 space-y-2">
+                    <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-orange-400 ring-4 ring-white dark:ring-slate-900"></div>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="font-extrabold text-base text-amber-900 dark:text-amber-100" id="expTitle1">某某幸福家庭 • 首席陪伴官 & 唤醒总管</h3>
+                        <span class="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">2022.05 - 至今</span>
+                    </div>
+                    <ul class="list-disc list-inside text-xs text-slate-700 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                        <li>负责每日早晨 06:30 准时用湿润肉垫与咕噜声提醒铲屎官起床准备猫粮，无一次迟到记录。</li>
+                        <li>在主人电脑办公期间，积极在键盘上踩出“asdfghjk”，成功向团队发送神秘沟通符号。</li>
+                        <li>每日提供不少于 4 小时的贴膝盖或胸口暖床服务，显著降低主人的工作焦虑指数。</li>
+                    </ul>
+                </div>
+
+                <!-- 履历 2 -->
+                <div class="relative pl-6 border-l-2 border-amber-300 dark:border-amber-900 space-y-2">
+                    <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-rose-400 ring-4 ring-white dark:ring-slate-900"></div>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="font-extrabold text-base text-amber-900 dark:text-amber-100" id="expTitle2">萌宠训练营 • 荣誉毕业生</h3>
+                        <span class="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">2021.11 - 2022.04</span>
+                    </div>
+                    <ul class="list-disc list-inside text-xs text-slate-700 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                        <li>以全营第1名的优异成绩学会“坐下”、“握手”与“看镜头发呆”。</li>
+                        <li>签署《终极不拆沙发和平条约》，并获得“文明毛孩子”奖章。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 特殊捣蛋项目展示 -->
+            <div class="pt-4">
+                <h3 class="text-sm font-extrabold text-amber-900 dark:text-amber-200 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-flask text-rose-500"></i> 代表性“科研与实测项目”
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="p-4 rounded-2xl bg-amber-50/60 dark:bg-slate-800/60 border border-amber-200/60 dark:border-slate-700 space-y-1.5">
+                        <div class="font-bold text-xs text-amber-900 dark:text-amber-200">项目 A：沙发海绵抓力与抗抗磨测试</div>
+                        <p class="text-[11px] text-slate-600 dark:text-slate-400">成果：经过连续3个月爪功磨砺，成功验证该沙发内部填充物为优质高回弹海绵。</p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-amber-50/60 dark:bg-slate-800/60 border border-amber-200/60 dark:border-slate-700 space-y-1.5">
+                        <div class="font-bold text-xs text-amber-900 dark:text-amber-200">项目 B：夜间零食储物柜突破行动</div>
+                        <p class="text-[11px] text-slate-600 dark:text-slate-400">成果：借助重力加速度推倒冻干罐，成功开辟夜间加餐绿色通道。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 喜好清单与性格 Trait & Likes -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 喜欢 -->
+            <div class="pet-card p-6 space-y-4">
+                <div class="flex items-center gap-2 border-b border-cream-200 dark:border-slate-800 pb-3">
+                    <span class="p-2 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-slate-800 dark:text-emerald-400">
+                        <i class="fa-solid fa-thumbs-up text-lg"></i>
+                    </span>
+                    <h2 class="text-xl font-bold text-amber-900 dark:text-amber-100">心头好清单 (Likes)</h2>
+                </div>
+                <div class="flex flex-wrap gap-2 text-xs font-bold" id="likesContainer">
+                    <span class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-slate-700">🐔 鸡胸肉冻干</span>
+                    <span class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-slate-700">📦 快递纸箱 (越小越爱)</span>
+                    <span class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-slate-700">🔴 激光笔红点</span>
+                    <span class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-slate-700">☀️ 午后 2 点的阳光</span>
+                    <span class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-slate-700">💆 下巴与下颚按摩</span>
+                </div>
+            </div>
+
+            <!-- 讨厌 -->
+            <div class="pet-card p-6 space-y-4">
+                <div class="flex items-center gap-2 border-b border-cream-200 dark:border-slate-800 pb-3">
+                    <span class="p-2 rounded-xl bg-rose-100 text-rose-600 dark:bg-slate-800 dark:text-rose-400">
+                        <i class="fa-solid fa-thumbs-down text-lg"></i>
+                    </span>
+                    <h2 class="text-xl font-bold text-amber-900 dark:text-amber-100">雷区警告 (Dislikes)</h2>
+                </div>
+                <div class="flex flex-wrap gap-2 text-xs font-bold" id="dislikesContainer">
+                    <span class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-slate-800 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-slate-700">🚿 全身洗澡</span>
+                    <span class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-slate-800 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-slate-700">🌪️ 咆哮的吸尘器</span>
+                    <span class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-slate-800 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-slate-700">✂️ 强制剪指甲</span>
+                    <span class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-slate-800 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-slate-700">💉 医院打针与航空箱</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 荣誉殿堂 (Awards & Medals) -->
+        <section class="pet-card p-6 sm:p-8 space-y-6">
+            <div class="flex items-center gap-2 border-b border-cream-200 dark:border-slate-800 pb-4">
+                <span class="p-2.5 rounded-xl bg-amber-100 text-amber-600 dark:bg-slate-800 dark:text-amber-400">
+                    <i class="fa-solid fa-trophy text-xl"></i>
+                </span>
+                <h2 class="text-2xl font-bold text-amber-900 dark:text-amber-100">荣誉殿堂 & 获评奖项</h2>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                <div class="p-4 rounded-2xl bg-amber-50 dark:bg-slate-800 border border-amber-200/70 dark:border-slate-700 space-y-2">
+                    <div class="text-3xl">🥇</div>
+                    <div class="font-bold text-xs text-amber-900 dark:text-amber-200">年度最佳咕噜声金奖</div>
+                    <p class="text-[10px] text-slate-500">颁奖单位：家庭情绪抚慰委员会</p>
+                </div>
+                <div class="p-4 rounded-2xl bg-amber-50 dark:bg-slate-800 border border-amber-200/70 dark:border-slate-700 space-y-2">
+                    <div class="text-3xl">🏆</div>
+                    <div class="font-bold text-xs text-amber-900 dark:text-amber-200">深夜客厅跑酷速度冠军</div>
+                    <p class="text-[10px] text-slate-500">颁奖单位：凌晨3点室内马拉松组委会</p>
+                </div>
+                <div class="p-4 rounded-2xl bg-amber-50 dark:bg-slate-800 border border-amber-200/70 dark:border-slate-700 space-y-2">
+                    <div class="text-3xl">🎖️</div>
+                    <div class="font-bold text-xs text-amber-900 dark:text-amber-200">绝育术后康复模范生</div>
+                    <p class="text-[10px] text-slate-500">颁奖单位：爱心宠物医院</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 主人评语与推荐信 -->
+        <section class="pet-card p-6 sm:p-8 space-y-6">
+            <div class="flex items-center gap-2 border-b border-cream-200 dark:border-slate-800 pb-4">
+                <span class="p-2.5 rounded-xl bg-rose-100 text-rose-600 dark:bg-slate-800 dark:text-rose-400">
+                    <i class="fa-solid fa-quote-left text-xl"></i>
+                </span>
+                <h2 class="text-2xl font-bold text-amber-900 dark:text-amber-100">铲屎官推荐信与兽医评语</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 推荐信 1 -->
+                <div class="p-5 rounded-2xl bg-cream-50 dark:bg-slate-800/80 border border-cream-200 dark:border-slate-700 space-y-3 relative">
+                    <p class="text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed" id="testimonial1">
+                        “虽然咪咪偶尔会在我工作正忙时踩掉电源键，但只要他蜷缩在我怀里打呼噜，加班的疲惫就全融化了。他是世界上最优秀的情绪价值提供者！”
+                    </p>
+                    <div class="flex items-center gap-3 pt-2">
+                        <div class="w-8 h-8 rounded-full bg-amber-300 flex items-center justify-center font-bold text-amber-900 text-xs">
+                            主
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-amber-900 dark:text-amber-200" id="reviewerName1">资深铲屎官 • 张先生</div>
+                            <div class="text-[10px] text-slate-400">联合居住 3 年</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 推荐信 2 -->
+                <div class="p-5 rounded-2xl bg-cream-50 dark:bg-slate-800/80 border border-cream-200 dark:border-slate-700 space-y-3 relative">
+                    <p class="text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed" id="testimonial2">
+                        “咪咪身体非常健康，肌肉紧实，毛发光泽度达标。体检时表现得非常从容勇敢（除了看到体温针的时候）。是一位高配合度的优质小患者。”
+                    </p>
+                    <div class="flex items-center gap-3 pt-2">
+                        <div class="w-8 h-8 rounded-full bg-emerald-300 flex items-center justify-center font-bold text-emerald-900 text-xs">
+                            医
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-amber-900 dark:text-amber-200" id="reviewerName2">主治兽医师 • 李医生</div>
+                            <div class="text-[10px] text-slate-400">萌宠健康医院</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-8 text-xs text-amber-800/60 dark:text-slate-500 no-print space-y-2">
+        <p>🐾 萌宠求职 & 履历网页 • Crafted with love for all furry friends 🐾</p>
+        <p>© <span id="yearSpan"></span> Pet CV Portal. 保留所有摸摸与咕噜权利。</p>
+    </footer>
+
+    <!-- 弹窗 1：在线编辑宠物资料 Modal -->
+    <div id="editModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="pet-card bg-white dark:bg-slate-900 max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-4 relative shadow-2xl">
+            <button onclick="toggleEditModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="border-b border-cream-200 dark:border-slate-800 pb-2">
+                <h3 class="text-lg font-bold text-amber-900 dark:text-amber-100 flex items-center gap-2">
+                    <i class="fa-solid fa-paw text-paw-pink"></i> 编辑毛孩子档案
+                </h3>
+            </div>
+
+            <form onsubmit="savePetProfile(event)" class="space-y-3 text-xs font-bold text-slate-700 dark:text-slate-300">
+                <div>
+                    <label class="block mb-1">宠物名字</label>
+                    <input type="text" id="inputName" value="咪咪 (Mimi)" class="w-full p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800 border border-amber-200 dark:border-slate-700">
+                </div>
+                <div>
+                    <label class="block mb-1">职位头衔</label>
+                    <input type="text" id="inputTitle" value="首席陪伴官 (Chief Emotional Officer) & 踩奶专家" class="w-full p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800 border border-amber-200 dark:border-slate-700">
+                </div>
+                <div>
+                    <label class="block mb-1">头像 图片URL</label>
+                    <input type="url" id="inputAvatar" value="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=400&q=80" class="w-full p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800 border border-amber-200 dark:border-slate-700">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block mb-1">品种</label>
+                        <input type="text" id="inputBreed" value="英国短毛猫 (英短蓝猫)" class="w-full p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800 border border-amber-200 dark:border-slate-700">
+                    </div>
+                    <div>
+                        <label class="block mb-1">年龄</label>
+                        <input type="text" id="inputAge" value="3岁 (人类 28 岁)" class="w-full p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800 border border-amber-200 dark:border-slate-700">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block mb-1">体重</label>
+                        <input type="text" id="inputWeight" value="4.8 kg (微胖可爱)" class="w-full p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800 border border-amber-200 dark:border-slate-700">
+                    </div>
+                    <div>
+                        <label class="block mb-1">居住领地</label>
+                        <input type="text" id="inputLocation" value="上海 • 暖阳阳阳台" class="w-full p-2.5 rounded-xl bg-amber-50 dark:bg-slate-800 border border-amber-200 dark:border-slate-700">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-cream-200 dark:border-slate-800">
+                    <button type="button" onclick="toggleEditModal()" class="px-4 py-2 rounded-xl bg-amber-100 dark:bg-slate-800 text-amber-900 dark:text-amber-200">取消</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-400 to-amber-500 text-white shadow">保存档案</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 弹窗 2：求领养/打赏云吸 Modal -->
+    <div id="adoptModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="pet-card bg-white dark:bg-slate-900 max-w-sm w-full p-6 text-center space-y-4 relative shadow-2xl">
+            <button onclick="closeAdoptModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="w-16 h-16 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center mx-auto text-2xl">
+                <i class="fa-solid fa-heart-circle-check"></i>
+            </div>
+            <h3 class="text-xl font-bold text-amber-900 dark:text-amber-100">感谢您的喜爱！</h3>
+            <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                我是随时准备上岗的萌宠。如果您想约我玩耍、领养或者赞助一包冻干小鱼干，请联系我的终身经纪人（铲屎官）！
+            </p>
+            <button onclick="closeAdoptModal()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-400 to-pink-500 text-white font-bold text-xs shadow-md">
+                收到！立刻安排摸摸 🐾
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript 交互逻辑 -->
+    <script>
+        document.getElementById('yearSpan').textContent = new Date().getFullYear();
+
+        // 宠物默认预设数据 (猫咪 vs 狗狗)
+        const petPresets = {
+            cat: {
+                navTitle: "猫咪咪 • 职场求职名片",
+                name: "咪咪 (Mimi)",
+                title: "首席陪伴官 (Chief Emotional Officer) & 踩奶专家",
+                avatar: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=400&q=80",
+                breed: "英国短毛猫 (英短蓝猫)",
+                age: "3岁 (人类 28 岁)",
+                location: "上海 • 暖阳阳阳台",
+                health: "已绝育 / 疫苗齐全",
+                weight: "4.8 kg (微胖可爱)",
+                length: "55 cm",
+                fur: "极度顺滑 / 柔顺灰蓝",
+                statusText: "随时可提供摸摸 & 咕噜",
+                mbti: "MBTI: ENFP (陪伴型毛孩子)",
+                soundText: "喵呜~",
+                badgeIcon: "fa-shield-cat",
+                genderIcon: "<i class=\"fa-solid fa-mars\"></i>",
+                skills: [
+                    { name: "治愈系咕噜 & 陪伴 (Emotional Support)", score: "100%", color: "bg-rose-400", label: "100% (大师级)", icon: "fa-hand-holding-heart text-rose-400" },
+                    { name: "毯子/肉垫踩奶 (Baking Biscuits)", score: "98%", color: "bg-amber-400", label: "98% (专家级)", icon: "fa-mattress-pillow text-amber-500" },
+                    { name: "蚊虫打捕与侦察 (Pest Control)", score: "85%", color: "bg-emerald-400", label: "85% (高级)", icon: "fa-bug text-emerald-500" },
+                    { name: "卖萌讨要罐头 (Begging Skills)", score: "95%", color: "bg-orange-400", label: "95% (精通)", icon: "fa-utensils text-orange-500" },
+                    { name: "定点文明使用猫砂/狗厕所", score: "100%", color: "bg-indigo-400", label: "100% (模范)", icon: "fa-restroom text-indigo-500" }
+                ],
+                likes: ["🐔 鸡胸肉冻干", "📦 快递纸箱 (越小越爱)", "🔴 激光笔红点", "☀️ 午后 2 点的阳光", "💆 下巴与下颚按摩"],
+                dislikes: ["🚿 全身洗澡", "🌪️ 咆哮的吸尘器", "✂️ 强制剪指甲", "💉 医院打针与航空箱"],
+                exp1Title: "某某幸福家庭 • 首席陪伴官 & 唤醒总管",
+                exp2Title: "萌宠训练营 • 荣誉毕业生",
+                reviewer1: "资深铲屎官 • 张先生",
+                testimonial1: "“虽然咪咪偶尔会在我工作正忙时踩掉电源键，但只要他蜷缩在我怀里打呼噜，加班的疲惫就全融化了。他是世界上最优秀的情绪价值提供者！”"
+            },
+            dog: {
+                navTitle: "旺财 • 职场求职名片",
+                name: "旺财 (Lucky)",
+                title: "家庭安全总管 & 24小时摇尾巴巡逻员",
+                avatar: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=400&q=80",
+                breed: "金毛寻回犬 (Golden Retriever)",
+                age: "2岁 (人类 24 岁)",
+                location: "北京 • 宽敞大客厅",
+                health: "已绝育 / 芯片植入",
+                weight: "28.5 kg (强壮健硕)",
+                length: "95 cm",
+                fur: "金黄茂密 / 丝滑双层毛",
+                statusText: "精力充沛！随时准备飞盘",
+                mbti: "MBTI: ESFP (热情巡逻员)",
+                soundText: "汪汪！",
+                badgeIcon: "fa-dog",
+                genderIcon: "<i class=\"fa-solid fa-mars-stroke text-blue-400\"></i>",
+                skills: [
+                    { name: "飞盘与网球接球 (Fetching)", score: "100%", color: "bg-amber-400", label: "100% (神射手)", icon: "fa-baseball-bat-ball text-amber-500" },
+                    { name: "热情摇尾巴与欢迎仪式", score: "100%", color: "bg-rose-400", label: "100% (顶流)", icon: "fa-heart text-rose-400" },
+                    { name: "门铃警戒与保安巡逻 (Guard)", score: "90%", color: "bg-emerald-400", label: "90% (尽职)", icon: "fa-shield-halved text-emerald-500" },
+                    { name: "遵纪守法 Outdoor 随行捡屎", score: "95%", color: "bg-indigo-400", label: "95% (优秀)", icon: "fa-dog text-indigo-500" },
+                    { name: "抑制拆家欲望控制力", score: "88%", color: "bg-orange-400", label: "88% (良好)", icon: "fa-bone text-orange-500" }
+                ],
+                likes: ["🎾 黄色网球与飞盘", "🦴 啃大牛骨头", "🏃 草地无限跑酷", "🏊 夏季戏水游泳", "🚗 坐车车 window 吹风"],
+                dislikes: ["🌧️ 连续阴雨天不能出门", "👂 剪耳朵周围毛发", "👨‍⚕️ 兽医拿听诊器", "🍋 酸柠檬味"],
+                exp1Title: "温馨大居室 • 首席安保官与晨跑教练",
+                exp2Title: "狗狗好市民 (CGC) 训练班 • 卓越学员",
+                reviewer1: "主理铲屎官 • 李女士",
+                testimonial1: "“旺财是家里的开心果，每次下班回家他都是第一个冲到门口摇尾巴递拖鞋的！他是我们家不可或缺的守护天使。”"
+            }
+        };
+
+        let currentMood = 95;
+        let currentEnergy = 85;
+
+        // 切换暗黑模式
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = 'fa-solid fa-moon';
+            } else {
+                html.classList.add('dark');
+                icon.className = 'fa-solid fa-sun text-amber-400';
+            }
+        }
+
+        // 投喂零食互动逻辑
+        function feedPet() {
+            currentMood = Math.min(100, currentMood + 5);
+            currentEnergy = Math.min(100, currentEnergy + 5);
+            updateBars();
+
+            // 创建掉落动画
+            const treat = document.createElement('div');
+            treat.className = 'falling-treat text-2xl';
+            treat.innerHTML = Math.random() > 0.5 ? '🦴' : '🐟';
+            treat.style.left = Math.random() * (window.innerWidth - 50) + 'px';
+            treat.style.top = '50px';
+            document.body.appendChild(treat);
+
+            setTimeout(() => treat.remove(), 1200);
+        }
+
+        // 叫声互动
+        function makeSound() {
+            const soundRipple = document.getElementById('soundRipple');
+            soundRipple.classList.remove('hidden');
+            setTimeout(() => soundRipple.classList.add('hidden'), 800);
+
+            currentMood = Math.min(100, currentMood + 2);
+            updateBars();
+        }
+
+        function updateBars() {
+            document.getElementById('moodBar').style.width = currentMood + '%';
+            document.getElementById('moodNum').textContent = currentMood + '%';
+            document.getElementById('energyBar').style.width = currentEnergy + '%';
+            document.getElementById('energyNum').textContent = currentEnergy + '%';
+        }
+
+        // 一键切换猫咪 / 狗狗模板
+        function switchPetPreset(type) {
+            const p = petPresets[type];
+            if (!p) return;
+
+            document.getElementById('navPetTitle').textContent = p.navTitle;
+            document.getElementById('petName').textContent = p.name;
+            document.getElementById('petTitle').textContent = p.title;
+            document.getElementById('petAvatar').src = p.avatar;
+            document.getElementById('petBreed').textContent = p.breed;
+            document.getElementById('petAge').textContent = p.age;
+            document.getElementById('petLocation').textContent = p.location;
+            document.getElementById('petHealth').textContent = p.health;
+            document.getElementById('petWeight').textContent = p.weight;
+            document.getElementById('petLength').textContent = p.length;
+            document.getElementById('petFur').textContent = p.fur;
+            document.getElementById('petStatusText').textContent = p.statusText;
+            document.getElementById('petMbtiBadge').textContent = p.mbti;
+            document.getElementById('soundActionText').textContent = p.soundText;
+            document.getElementById('badgeIcon').className = 'fa-solid ' + p.badgeIcon;
+            document.getElementById('petGenderIcon').innerHTML = p.genderIcon;
+            document.getElementById('expTitle1').textContent = p.exp1Title;
+            document.getElementById('expTitle2').textContent = p.exp2Title;
+            document.getElementById('reviewerName1').textContent = p.reviewer1;
+            document.getElementById('testimonial1').textContent = p.testimonial1;
+
+            // 重新渲染技能
+            const skillsContainer = document.getElementById('skillsList');
+            skillsContainer.innerHTML = p.skills.map(s => `
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid ${s.icon}"></i> ${s.name}</span>
+                        <span class="text-amber-600">${s.label}</span>
+                    </div>
+                    <div class="bg-amber-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                        <div class="${s.color} h-2.5 rounded-full" style="width: ${s.score}"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            // 重新渲染 Likes & Dislikes
+            document.getElementById('likesContainer').innerHTML = p.likes.map(l => `
+                <span class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-slate-700">${l}</span>
+            `).join('');
+
+            document.getElementById('dislikesContainer').innerHTML = p.dislikes.map(d => `
+                <span class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-slate-800 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-slate-700">${d}</span>
+            `).join('');
+        }
+
+        // 自定义修改 Modal
+        function toggleEditModal() {
+            document.getElementById('editModal').classList.toggle('hidden');
+        }
+
+        function savePetProfile(e) {
+            e.preventDefault();
+            document.getElementById('petName').textContent = document.getElementById('inputName').value;
+            document.getElementById('petTitle').textContent = document.getElementById('inputTitle').value;
+            document.getElementById('petAvatar').src = document.getElementById('inputAvatar').value;
+            document.getElementById('petBreed').textContent = document.getElementById('inputBreed').value;
+            document.getElementById('petAge').textContent = document.getElementById('inputAge').value;
+            document.getElementById('petWeight').textContent = document.getElementById('inputWeight').value;
+            document.getElementById('petLocation').textContent = document.getElementById('inputLocation').value;
+            toggleEditModal();
+        }
+
+        // 应聘/关注 Modal
+        function openAdoptModal() {
+            document.getElementById('adoptModal').classList.remove('hidden');
+        }
+
+        function closeAdoptModal() {
+            document.getElementById('adoptModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
